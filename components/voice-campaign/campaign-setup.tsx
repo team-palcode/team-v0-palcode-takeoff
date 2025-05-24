@@ -373,4 +373,3 @@ export default function CampaignSetup({ campaignData, updateCampaignData, onNext
     </div>
   )
 }
-

@@ -269,4 +269,3 @@ export function BidFlagSetup({ onClose }: BidFlagSetupProps) {
     </div>
   )
 }
-

@@ -537,4 +537,3 @@ Example Corp,Electrical,John Doe,(555) 123-4567`
     </div>
   )
 }
-
