@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Download, Filter, CheckCircle, AlertTriangle, ArrowLeft, Edit2, Save, X } from "lucide-react"
+import { Filter, CheckCircle, AlertTriangle, ArrowLeft, Edit2, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -252,13 +252,12 @@ export default function QuantityVerification() {
                   </>
                 )}
               </Button>
-              <Button variant="outline" className="flex items-center gap-2" onClick={() => setSpecSheetOpen(true)}>
+              <Button
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => setSpecSheetOpen(true)}
+              >
                 <FileText className="h-4 w-4" />
                 Generate Spec Sheet
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Export
               </Button>
               <Button className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
@@ -478,11 +477,11 @@ export default function QuantityVerification() {
                   </TabsList>
 
                   <TabsContent value="floor-plan" className="mt-0">
-                    <div className="bg-gray-100 rounded-md h-[500px] flex items-center justify-center">
+                    <div className="bg-gray-100 rounded-md h-[500px] flex items-center justify-center overflow-hidden">
                       <img
-                        src="/placeholder.svg?height=500&width=400"
-                        alt="Floor Plan Blueprint"
-                        className="max-h-full"
+                        src="/images/construction-blueprint.png"
+                        alt="Construction Floor Plan Blueprint"
+                        className="max-h-full max-w-full object-contain"
                       />
                     </div>
                   </TabsContent>
