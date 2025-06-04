@@ -508,10 +508,25 @@ export default function QuantityVerification() {
 
       {/* Spec Sheet Generation Modal */}
       <Dialog open={specSheetOpen} onOpenChange={setSpecSheetOpen}>
-        <DialogContent className="max-w-7xl">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl">Specification Sheet – Auto Generated</DialogTitle>
+              <div>
+                <DialogTitle className="text-xl">Specification Sheet – Auto Generated</DialogTitle>
+                <DialogDescription className="mt-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between text-sm">
+                    <div>
+                      <span className="font-medium">Trade:</span> Plumbing
+                    </div>
+                    <div>
+                      <span className="font-medium">Drawing Set:</span> Skyline Tower - Plumbing
+                    </div>
+                    <div>
+                      <span className="font-medium">Generated On:</span> {new Date().toLocaleDateString()}
+                    </div>
+                  </div>
+                </DialogDescription>
+              </div>
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
@@ -531,28 +546,11 @@ export default function QuantityVerification() {
                   <FileSpreadsheet className="h-4 w-4" />
                   Export Excel
                 </Button>
-                <Button variant="ghost" size="sm" className="p-1 h-8 w-8" onClick={() => setSpecSheetOpen(false)}>
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Close</span>
-                </Button>
               </div>
             </div>
-            <DialogDescription>
-              <div className="flex flex-col sm:flex-row sm:justify-between text-sm mt-2">
-                <div>
-                  <span className="font-medium">Trade:</span> Plumbing
-                </div>
-                <div>
-                  <span className="font-medium">Drawing Set:</span> Skyline Tower - Plumbing
-                </div>
-                <div>
-                  <span className="font-medium">Generated On:</span> {new Date().toLocaleDateString()}
-                </div>
-              </div>
-            </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-x-auto max-h-[60vh]">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh] border rounded-md">
             <Table className="text-sm">
               <TableHeader className="bg-gray-50 sticky top-0">
                 <TableRow>
@@ -573,7 +571,7 @@ export default function QuantityVerification() {
                   <TableRow key={item.id} className="hover:bg-gray-50">
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>
-                      <Input defaultValue={item.name} className="h-8 w-full" />
+                      <Input defaultValue={item.name} className="h-8 w-full min-w-[200px]" />
                     </TableCell>
                     <TableCell>
                       <Input type="number" defaultValue={item.quantity} className="h-8 w-20" />
@@ -595,11 +593,11 @@ export default function QuantityVerification() {
                     <TableCell>
                       <Input
                         defaultValue={`${item.category} grade, standard ${item.subcategory}`}
-                        className="h-8 w-full"
+                        className="h-8 w-full min-w-[200px]"
                       />
                     </TableCell>
                     <TableCell>
-                      <Input defaultValue={item.location} className="h-8 w-full" />
+                      <Input defaultValue={item.location} className="h-8 w-full min-w-[120px]" />
                     </TableCell>
                     <TableCell>
                       <div className="h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center">
@@ -650,7 +648,7 @@ export default function QuantityVerification() {
             </Table>
           </div>
 
-          <DialogFooter className="border-t pt-4 mt-4 sticky bottom-0 bg-white">
+          <DialogFooter className="border-t pt-4 mt-4">
             <div className="flex justify-between items-center w-full">
               <div className="flex items-center space-x-2">
                 <Checkbox
