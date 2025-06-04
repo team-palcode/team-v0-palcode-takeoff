@@ -21,8 +21,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { FileSpreadsheet, FileText } from "lucide-react"
-import jsPDF from "jspdf"
-import "jspdf-autotable"
 
 // Mock data for the verification screen
 const mockItems = [
@@ -212,89 +210,98 @@ export default function QuantityVerification() {
     }))
   }
 
-  const exportSpecSheet = (format: "pdf" | "excel") => {
+  const exportSpecSheet = async (format: "pdf" | "excel") => {
     if (format === "pdf") {
-      const doc = new jsPDF("landscape", "mm", "a4")
+      try {
+        // Dynamic import to avoid SSR issues
+        const { jsPDF } = await import("jspdf")
+        const { default: autoTable } = await import("jspdf-autotable")
 
-      // Header
-      doc.setFontSize(16)
-      doc.setFont("helvetica", "bold")
-      doc.text("SPECIFICATION SHEET - AUTO GENERATED", 20, 20)
+        const doc = new jsPDF("landscape", "mm", "a4")
 
-      // Project info
-      doc.setFontSize(10)
-      doc.setFont("helvetica", "normal")
-      doc.text("Trade: Plumbing", 20, 30)
-      doc.text("Drawing Set: Skyline Tower - Plumbing", 100, 30)
-      doc.text(`Generated On: ${new Date().toLocaleDateString()}`, 200, 30)
+        // Header
+        doc.setFontSize(16)
+        doc.setFont("helvetica", "bold")
+        doc.text("SPECIFICATION SHEET - AUTO GENERATED", 20, 20)
 
-      // Table data
-      const tableData = items.map((item, index) => [
-        index + 1,
-        item.name,
-        item.quantity.toString(),
-        item.unit,
-        `${item.category} grade, standard ${item.subcategory}`,
-        item.location,
-        `${(item.confidence * 100).toFixed(0)}%`,
-        reviewers[item.id] || "",
-        reviewFlags[item.id] ? "Yes" : "No",
-      ])
+        // Project info
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        doc.text("Trade: Plumbing", 20, 30)
+        doc.text("Drawing Set: Skyline Tower - Plumbing", 100, 30)
+        doc.text(`Generated On: ${new Date().toLocaleDateString()}`, 200, 30)
 
-      // Table headers
-      const headers = [
-        "#",
-        "Material Name",
-        "Quantity",
-        "Unit",
-        "Specification",
-        "Location",
-        "Confidence",
-        "Reviewed By",
-        "Flagged",
-      ]
+        // Table data
+        const tableData = items.map((item, index) => [
+          index + 1,
+          item.name,
+          item.quantity.toString(),
+          item.unit,
+          `${item.category} grade, standard ${item.subcategory}`,
+          item.location,
+          `${(item.confidence * 100).toFixed(0)}%`,
+          reviewers[item.id] || "",
+          reviewFlags[item.id] ? "Yes" : "No",
+        ])
 
-      // Generate table
-      ;(doc as any).autoTable({
-        head: [headers],
-        body: tableData,
-        startY: 40,
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [0, 0, 0],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 15 },
-          1: { cellWidth: 50 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 15 },
-          4: { cellWidth: 60 },
-          5: { cellWidth: 30 },
-          6: { cellWidth: 20 },
-          7: { cellWidth: 25 },
-          8: { cellWidth: 15 },
-        },
-      })
+        // Table headers
+        const headers = [
+          "#",
+          "Material Name",
+          "Quantity",
+          "Unit",
+          "Specification",
+          "Location",
+          "Confidence",
+          "Reviewed By",
+          "Flagged",
+        ]
 
-      // Footer
-      const pageCount = doc.internal.getNumberOfPages()
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i)
-        doc.setFontSize(8)
-        doc.text(`Page ${i} of ${pageCount}`, 250, 200)
-        if (includeAINotes) {
-          doc.text("Generated with AI assistance - Review all specifications before use", 20, 200)
+        // Generate table using autoTable
+        autoTable(doc, {
+          head: [headers],
+          body: tableData,
+          startY: 40,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: [0, 0, 0],
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { cellWidth: 15 },
+            1: { cellWidth: 50 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 60 },
+            5: { cellWidth: 30 },
+            6: { cellWidth: 20 },
+            7: { cellWidth: 25 },
+            8: { cellWidth: 15 },
+          },
+        })
+
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages()
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i)
+          doc.setFontSize(8)
+          doc.text(`Page ${i} of ${pageCount}`, 250, 200)
+          if (includeAINotes) {
+            doc.text("Generated with AI assistance - Review all specifications before use", 20, 200)
+          }
         }
-      }
 
-      // Download the PDF
-      doc.save(`Specification_Sheet_${new Date().toISOString().split("T")[0]}.pdf`)
-      setSpecSheetOpen(false)
+        // Download the PDF
+        doc.save(`Specification_Sheet_${new Date().toISOString().split("T")[0]}.pdf`)
+        setSpecSheetOpen(false)
+      } catch (error) {
+        console.error("Error generating PDF:", error)
+        alert("Error generating PDF. Please try again.")
+      }
     } else {
       // Excel export would be implemented with a library like xlsx
       alert(`Exporting spec sheet as ${format}...`)
