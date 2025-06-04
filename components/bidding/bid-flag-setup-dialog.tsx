@@ -20,4 +20,3 @@ export function BidFlagSetupDialog({ open, onOpenChange }: BidFlagSetupDialogPro
     </Dialog>
   )
 }
-

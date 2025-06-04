@@ -347,4 +347,3 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     </Dialog>
   )
 }
-

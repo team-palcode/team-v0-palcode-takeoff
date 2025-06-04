@@ -8,4 +8,3 @@ interface LoadingSpinnerProps {
 export function LoadingSpinner({ size = 24, className = "" }: LoadingSpinnerProps) {
   return <Loader2 className={`animate-spin ${className}`} size={size} />
 }
-

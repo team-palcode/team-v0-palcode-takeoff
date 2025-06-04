@@ -284,4 +284,3 @@ export default function CampaignResultsPage({ params }: { params: { id: string }
     </div>
   )
 }
-

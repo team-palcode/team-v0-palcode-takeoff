@@ -230,4 +230,3 @@ export default function CampaignReview({ campaignData, onBack, onSaveDraft, onLa
     </div>
   )
 }
-
