@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, Download, X, Flag, Eye, CheckCircle, AlertTriangle, ArrowLeft, Edit2, Save } from "lucide-react"
+import { Download, Filter, CheckCircle, AlertTriangle, ArrowLeft, Edit2, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -10,10 +10,17 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea"
-import { Filter } from "@/components/ui/filter" // Import Filter component
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { FileSpreadsheet, FileText } from "lucide-react"
 
 // Mock data for the verification screen
 const mockItems = [
@@ -110,12 +117,10 @@ export default function QuantityVerification() {
     [key: number]: { name: string; quantity: number; unitPrice: number }
   }>({})
 
-  const [showSpecSheet, setShowSpecSheet] = useState(false)
-  const [specSheetData, setSpecSheetData] = useState<any[]>([])
-  const [includeAiNotes, setIncludeAiNotes] = useState(true)
-  const [flaggedItems, setFlaggedItems] = useState<Set<number>>(new Set())
-  const [reviewedBy, setReviewedBy] = useState<{ [key: number]: string }>({})
-  const [specifications, setSpecifications] = useState<{ [key: number]: string }>({})
+  const [specSheetOpen, setSpecSheetOpen] = useState(false)
+  const [includeAINotes, setIncludeAINotes] = useState(true)
+  const [reviewFlags, setReviewFlags] = useState<{ [key: number]: boolean }>({})
+  const [reviewers, setReviewers] = useState<{ [key: number]: string }>({})
 
   // Simulate loading data on initial render
   useEffect(() => {
@@ -191,33 +196,25 @@ export default function QuantityVerification() {
     return <AlertTriangle className="h-4 w-4 text-red-600" />
   }
 
-  const generateSpecSheet = () => {
-    const specData = filteredItems.map((item, index) => ({
-      ...item,
-      sequentialId: index + 1,
-      specification: specifications[item.id] || "Standard grade material per project specifications",
-      drawingSnippet: `/placeholder.svg?height=64&width=64&text=${encodeURIComponent(item.name)}`,
-      reviewedBy: reviewedBy[item.id] || "",
-      flagged: flaggedItems.has(item.id),
+  const toggleReviewFlag = (id: number) => {
+    setReviewFlags((prev) => ({
+      ...prev,
+      [id]: !prev[id],
     }))
-    setSpecSheetData(specData)
-    setShowSpecSheet(true)
   }
 
-  const handleFlagToggle = (itemId: number) => {
-    const newFlagged = new Set(flaggedItems)
-    if (newFlagged.has(itemId)) {
-      newFlagged.delete(itemId)
-    } else {
-      newFlagged.add(itemId)
-    }
-    setFlaggedItems(newFlagged)
+  const setReviewer = (id: number, reviewer: string) => {
+    setReviewers((prev) => ({
+      ...prev,
+      [id]: reviewer,
+    }))
   }
 
-  const getConfidenceBadgeClass = (confidence: number) => {
-    if (confidence >= 0.9) return "bg-green-100 text-green-800 border-green-200"
-    if (confidence >= 0.7) return "bg-amber-100 text-amber-800 border-amber-200"
-    return "bg-red-100 text-red-800 border-red-200"
+  const exportSpecSheet = (format: "pdf" | "excel") => {
+    // This would be implemented with a real export library
+    alert(`Exporting spec sheet as ${format}...`)
+    // Close the dialog after exporting
+    setSpecSheetOpen(false)
   }
 
   if (isLoading) {
@@ -255,6 +252,10 @@ export default function QuantityVerification() {
                   </>
                 )}
               </Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => setSpecSheetOpen(true)}>
+                <FileText className="h-4 w-4" />
+                Generate Spec Sheet
+              </Button>
               <Button variant="outline" className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Export
@@ -262,10 +263,6 @@ export default function QuantityVerification() {
               <Button className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Approve All
-              </Button>
-              <Button className="flex items-center gap-2" onClick={generateSpecSheet}>
-                <FileText className="h-4 w-4" />
-                Generate Spec Sheet
               </Button>
             </div>
           </div>
@@ -279,7 +276,7 @@ export default function QuantityVerification() {
                 <div className="p-4 border-b flex justify-between items-center">
                   <h3 className="font-medium">Detected Items</h3>
                   <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-500" /> {/* Filter component used here */}
+                    <Filter className="h-4 w-4 text-gray-500" />
                     <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Filter by subcategory" />
@@ -509,187 +506,181 @@ export default function QuantityVerification() {
           </div>
         </div>
       </div>
-      {/* Spec Sheet Modal */}
-      <Dialog open={showSpecSheet} onOpenChange={setShowSpecSheet}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <div className="flex justify-between items-start">
-              <div>
-                <DialogTitle className="text-xl font-semibold">Specification Sheet – Auto Generated</DialogTitle>
-                <div className="mt-2 space-y-1 text-sm text-gray-600">
-                  <p>
-                    <span className="font-medium">Trade:</span> Plumbing
-                  </p>
-                  <p>
-                    <span className="font-medium">Drawing Set:</span> Skyline Tower - Floor Plans
-                  </p>
-                  <p>
-                    <span className="font-medium">Generated On:</span> {new Date().toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
+
+      {/* Spec Sheet Generation Modal */}
+      <Dialog open={specSheetOpen} onOpenChange={setSpecSheetOpen}>
+        <DialogContent className="max-w-7xl">
+          <DialogHeader>
+            <div className="flex justify-between items-center">
+              <DialogTitle className="text-xl">Specification Sheet – Auto Generated</DialogTitle>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={() => exportSpecSheet("pdf")}
+                >
+                  <FileText className="h-4 w-4" />
                   Export PDF
                 </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={() => exportSpecSheet("excel")}
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
                   Export Excel
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowSpecSheet(false)}>
+                <Button variant="ghost" size="sm" className="p-1 h-8 w-8" onClick={() => setSpecSheetOpen(false)}>
                   <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
                 </Button>
               </div>
             </div>
+            <DialogDescription>
+              <div className="flex flex-col sm:flex-row sm:justify-between text-sm mt-2">
+                <div>
+                  <span className="font-medium">Trade:</span> Plumbing
+                </div>
+                <div>
+                  <span className="font-medium">Drawing Set:</span> Skyline Tower - Plumbing
+                </div>
+                <div>
+                  <span className="font-medium">Generated On:</span> {new Date().toLocaleDateString()}
+                </div>
+              </div>
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-auto">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr className="divide-x divide-gray-200">
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">#</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Material Name</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Quantity</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Unit</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Specification</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Location</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Drawing</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Confidence</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Reviewed By</th>
-                    <th className="px-3 py-3 text-left font-medium text-gray-900">Flag</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {specSheetData.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-3 whitespace-nowrap text-gray-900 font-medium">{item.sequentialId}</td>
-                      <td className="px-3 py-3">
-                        <div className="font-medium text-gray-900">{item.name}</div>
-                        <div className="text-xs text-gray-500">{item.subcategory}</div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const newData = specSheetData.map((i) =>
-                              i.id === item.id ? { ...i, quantity: Number(e.target.value) } : i,
-                            )
-                            setSpecSheetData(newData)
-                          }}
-                          className="w-20 h-8"
+          <div className="overflow-x-auto max-h-[60vh]">
+            <Table className="text-sm">
+              <TableHeader className="bg-gray-50 sticky top-0">
+                <TableRow>
+                  <TableHead className="w-10">#</TableHead>
+                  <TableHead>Material Name</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Specification</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Drawing Snippet</TableHead>
+                  <TableHead>Confidence</TableHead>
+                  <TableHead>Reviewed By</TableHead>
+                  <TableHead>Flag</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item, index) => (
+                  <TableRow key={item.id} className="hover:bg-gray-50">
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>
+                      <Input defaultValue={item.name} className="h-8 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Input type="number" defaultValue={item.quantity} className="h-8 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Select defaultValue={item.unit}>
+                        <SelectTrigger className="h-8 w-20">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="EA">EA</SelectItem>
+                          <SelectItem value="LF">LF</SelectItem>
+                          <SelectItem value="SF">SF</SelectItem>
+                          <SelectItem value="CY">CY</SelectItem>
+                          <SelectItem value="GAL">GAL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        defaultValue={`${item.category} grade, standard ${item.subcategory}`}
+                        className="h-8 w-full"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input defaultValue={item.location} className="h-8 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center">
+                        <img
+                          src={`/placeholder.svg?height=64&width=64&query=blueprint detail of ${item.name}`}
+                          alt={`Drawing snippet for ${item.name}`}
+                          className="object-cover h-16 w-16 rounded-md"
                         />
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <Select
-                          value={item.unit}
-                          onValueChange={(value) => {
-                            const newData = specSheetData.map((i) => (i.id === item.id ? { ...i, unit: value } : i))
-                            setSpecSheetData(newData)
-                          }}
-                        >
-                          <SelectTrigger className="w-16 h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="EA">EA</SelectItem>
-                            <SelectItem value="LF">LF</SelectItem>
-                            <SelectItem value="SF">SF</SelectItem>
-                            <SelectItem value="CF">CF</SelectItem>
-                            <SelectItem value="SY">SY</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-3 py-3">
-                        <Textarea
-                          value={specifications[item.id] || item.specification}
-                          onChange={(e) => setSpecifications({ ...specifications, [item.id]: e.target.value })}
-                          className="min-h-[60px] text-xs"
-                          placeholder="Enter material specifications..."
-                        />
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <Input
-                          value={item.location}
-                          onChange={(e) => {
-                            const newData = specSheetData.map((i) =>
-                              i.id === item.id ? { ...i, location: e.target.value } : i,
-                            )
-                            setSpecSheetData(newData)
-                          }}
-                          className="w-24 h-8 text-xs"
-                        />
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <div className="relative group">
-                          <img
-                            src={item.drawingSnippet || "/placeholder.svg"}
-                            alt="Drawing snippet"
-                            className="h-16 w-16 object-cover rounded-md border cursor-pointer"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Eye className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <Badge className={`${getConfidenceBadgeClass(item.confidence)} border`}>
-                          {(item.confidence * 100).toFixed(0)}%
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <Select
-                          value={reviewedBy[item.id] || ""}
-                          onValueChange={(value) => {
-                            setReviewedBy({ ...reviewedBy, [item.id]: value })
-                          }}
-                        >
-                          <SelectTrigger className="w-32 h-8">
-                            <SelectValue placeholder="Select..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="john-doe">John Doe</SelectItem>
-                            <SelectItem value="jane-smith">Jane Smith</SelectItem>
-                            <SelectItem value="mike-wilson">Mike Wilson</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-center">
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={`flex items-center gap-1 ${getConfidenceColor(item.confidence)}`}
+                      >
+                        {getConfidenceIcon(item.confidence)}
+                        {(item.confidence * 100).toFixed(0)}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={reviewers[item.id] || ""} onValueChange={(value) => setReviewer(item.id, value)}>
+                        <SelectTrigger className="h-8 w-32">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="john">John Smith</SelectItem>
+                          <SelectItem value="sarah">Sarah Johnson</SelectItem>
+                          <SelectItem value="mike">Mike Davis</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center">
                         <Checkbox
-                          checked={flaggedItems.has(item.id)}
-                          onCheckedChange={() => handleFlagToggle(item.id)}
+                          id={`flag-${item.id}`}
+                          checked={reviewFlags[item.id] || false}
+                          onCheckedChange={() => toggleReviewFlag(item.id)}
+                          className={reviewFlags[item.id] ? "bg-orange-500 text-white" : ""}
                         />
-                        {flaggedItems.has(item.id) && <Flag className="h-4 w-4 text-red-500 ml-1 inline" />}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <label htmlFor={`flag-${item.id}`} className="sr-only">
+                          Flag for review
+                        </label>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
-          <div className="flex-shrink-0 border-t bg-gray-50 px-6 py-4">
-            <div className="flex justify-between items-center">
+          <DialogFooter className="border-t pt-4 mt-4 sticky bottom-0 bg-white">
+            <div className="flex justify-between items-center w-full">
               <div className="flex items-center space-x-2">
-                <Checkbox id="include-ai-notes" checked={includeAiNotes} onCheckedChange={setIncludeAiNotes} />
-                <label htmlFor="include-ai-notes" className="text-sm text-gray-700">
+                <Checkbox
+                  id="include-ai-notes"
+                  checked={includeAINotes}
+                  onCheckedChange={(checked) => setIncludeAINotes(!!checked)}
+                />
+                <label htmlFor="include-ai-notes" className="text-sm">
                   Include AI Notes in Export
                 </label>
               </div>
-              <div className="flex items-center space-x-3">
-                <Button variant="outline" onClick={() => setShowSpecSheet(false)}>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setSpecSheetOpen(false)}>
                   Cancel
                 </Button>
-                <Button variant="outline" className="text-gray-600">
-                  Save Draft
+                <Button variant="secondary">Save Draft</Button>
+                <Button
+                  variant="default"
+                  className="bg-orange-600 hover:bg-orange-700"
+                  onClick={() => exportSpecSheet("pdf")}
+                >
+                  Export PDF
                 </Button>
-                <Button className="bg-orange-600 hover:bg-orange-700">Export PDF</Button>
-                <Button variant="outline">Export Excel</Button>
+                <Button variant="outline" onClick={() => exportSpecSheet("excel")}>
+                  Export Excel
+                </Button>
               </div>
             </div>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
